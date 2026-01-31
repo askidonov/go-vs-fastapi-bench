@@ -14,58 +14,56 @@
 ## Требования
 
 ### Обязательно
-- **Docker Desktop** (Windows/macOS) или Docker Engine (Linux)
-- **Docker Compose** (в составе Docker Desktop или отдельно)
+- Docker Desktop (Windows/macOS) или Docker Engine (Linux)
+- Docker Compose
 
-### Windows + WSL2 (важно)
-Если вы запускаете из WSL2, Docker должен быть доступен **внутри** дистрибутива:
-1) Docker Desktop → **Settings** → **Resources** → **WSL Integration**
-2) Включить интеграцию для нужного дистрибутива (Ubuntu/Debian и т.д.)
+### Windows + WSL2
+Docker должен быть доступен внутри WSL2:
+1) Docker Desktop → Settings → Resources → WSL Integration
+2) Включить интеграцию для нужного дистрибутива
 3) Проверить в WSL:
    ```bash
    docker version
    docker compose version
-   ```
+   ````
 
-
-Если видите ошибку вида “Cannot connect to the Docker daemon…”, это почти всегда не включён WSL Integration.
+Если видите “Cannot connect to the Docker daemon…”, почти всегда не включён WSL Integration.
 
 ### k6
 
-Локально устанавливать k6 **не требуется** — репозиторий использует **Docker-версию k6** (через `docker compose run`).
-Это избавляет от проблем установки через `apt` и сетевых таймаутов.
+Локально k6 не нужен — используется Docker-версия через `docker compose run`.
 
 ---
 
-## Быстрый старт (самый простой путь)
+## Быстрый старт
 
-1. **Скопировать переменные окружения:**
+1. Скопировать переменные окружения:
 
 ```bash
 cp .env.example .env
 ```
 
-2. **Поднять всё (postgres + миграции + сид + оба API):**
+2. Поднять всё (postgres + миграции + сид + оба API):
 
 ```bash
 make up
 ```
 
-3. **Проверить health:**
+3. Проверить health:
 
 ```bash
 curl http://localhost:8080/healthz  # Go API
 curl http://localhost:8081/healthz  # Python API
 ```
 
-4. **Запустить нагрузочные тесты (k6 в Docker):**
+4. Запустить нагрузочные тесты (k6 в Docker):
 
 ```bash
 make bench-go
 make bench-py
 ```
 
-5. **Посмотреть результаты:**
+5. Результаты:
 
 ```bash
 ls -la loadtest/results
@@ -97,15 +95,15 @@ bench-frameworks/
 
 ## Команды (Makefile)
 
-* `make up` — поднять postgres + миграции + сид + оба API
-* `make up-go` — поднять postgres + Go API
-* `make up-py` — поднять postgres + Python API
+* `make up` — postgres + миграции + сид + оба API
+* `make up-go` — postgres + Go API
+* `make up-py` — postgres + Python API
 * `make down` — остановить все сервисы
-* `make bench-go` — запустить k6 тесты для Go API (k6 через Docker)
-* `make bench-py` — запустить k6 тесты для Python API (k6 через Docker)
+* `make bench-go` — k6 тесты для Go (k6 через Docker)
+* `make bench-py` — k6 тесты для Python (k6 через Docker)
 * `make clean` — удалить volume БД (⚠️ удалит все данные)
-* `make logs-go` — показать логи Go API
-* `make logs-py` — показать логи Python API
+* `make logs-go` — логи Go API
+* `make logs-py` — логи Python API
 
 ---
 
@@ -115,19 +113,13 @@ bench-frameworks/
 
 ### GET /healthz
 
-Проверка здоровья сервиса.
-
-**Response:**
-
 ```json
 {"status": "ok"}
 ```
 
 ### GET /users/{id}
 
-Получить пользователя по UUID.
-
-**Response 200:**
+Response 200:
 
 ```json
 {
@@ -141,7 +133,7 @@ bench-frameworks/
 }
 ```
 
-**Response 404:**
+Response 404:
 
 ```json
 {"error": "not_found"}
@@ -149,18 +141,16 @@ bench-frameworks/
 
 ### GET /users
 
-Получить список пользователей с пагинацией.
+Query:
 
-**Query параметры:**
+* `limit` (default: 50, max: 200)
+* `offset` (default: 0)
 
-* `limit` (int, default: 50, max: 200)
-* `offset` (int, default: 0)
-
-**Response 200:**
+Response 200:
 
 ```json
 {
-  "items": [/* массив User объектов */],
+  "items": [],
   "limit": 50,
   "offset": 0,
   "total": 10000
@@ -171,37 +161,27 @@ bench-frameworks/
 
 ## Нагрузочное тестирование (k6) — без локальной установки
 
-### Почему k6 запускается в Docker
+k6 запускается в контейнере, поэтому:
 
-* не надо ставить k6 через `apt`/`brew`,
-* меньше проблем с сетью/ключами/репозиториями,
-* одинаковый способ запуска на любой ОС.
+* `localhost` внутри k6 — не ваш хост,
+* target должен быть по имени сервиса compose-сети: `http://go-api:8080` или `http://py-api:8081`.
 
-### Важно про сеть
-
-k6 запускается **в контейнере**, поэтому:
-
-* `localhost` внутри k6 контейнера — это **не ваш хост**,
-* сценарии должны ходить по имени сервиса compose-сети: `http://go-api:8080` или `http://py-api:8081`.
-
-Команды `make bench-go` / `make bench-py` уже настроены правильно.
+`make bench-go` / `make bench-py` уже используют правильные URL.
 
 ---
 
-## Честность сравнения — как запускать правильно
+## Честность сравнения
 
-Чтобы не получить “нечестные” результаты (например, Go использует все CPU, а Python ограничен), сравнение делается в двух режимах.
+Сравнение делается в двух режимах.
 
 ### Режим A: Single-instance efficiency (1 CPU, 1 процесс)
 
-Цель: сравнить **один процесс** на **одном ядре**.
-
-* CPU: **1 core** для каждого сервиса
+* CPU: 1 core на сервис
 * Go: `GOMAXPROCS=1`
 * Python: `UVICORN_WORKERS=1`
-* Общий бюджет DB connections: фиксированный (например **30 total**)
+* DB connections total: 30
 
-Запуск (если в репо есть override-файл):
+Запуск:
 
 ```bash
 cp .env.single .env
@@ -210,20 +190,13 @@ make bench-go
 make bench-py
 ```
 
-### Режим B: Multi-core throughput (4 CPU, масштабирование)
+### Режим B: Multi-core throughput (4 CPU)
 
-Цель: сравнить throughput при одинаковом CPU бюджете.
-
-* CPU: **4 cores** для каждого сервиса
+* CPU: 4 cores на сервис
 * Go: `GOMAXPROCS=4`
 * Python: `UVICORN_WORKERS=4`
-* Общий бюджет DB connections: фиксированный (например **40 total**)
-
-Ключевой момент: **Python pool на воркер** должен делиться:
-
-* TOTAL_DB_CONNS = 40
-* workers = 4
-* `DB_POOL_MAX_SIZE = 10` (10 × 4 = 40 total)
+* DB connections total: 40
+* Python per-worker pool: `DB_POOL_MAX_SIZE = 40 / 4 = 10`
 
 Запуск:
 
@@ -234,66 +207,99 @@ make bench-go
 make bench-py
 ```
 
-### Почему это важно
+---
 
-* `UVICORN_WORKERS` = N → **N процессов**, и каждый создаёт свой пул БД.
-* Если не делить пул, Python может случайно открыть в N раз больше соединений к Postgres, и сравнение станет про DB connections, а не про runtime/framework.
+## Результаты нагрузочного тестирования (31 января 2026)
+
+**Конфигурация:** 4 CPU cores, 40 DB connections total, PostgreSQL 16, 10,000 записей, memory limit 512MB на сервис.
+
+### Go API
+
+* net/http + chi v5
+* pgxpool v5
+* `GOMAXPROCS=4`
+* DB conns: min 10 / max 40
+
+### Python API
+
+* FastAPI + Pydantic v2
+* asyncpg
+* `UVICORN_WORKERS=4`
+* DB conns: 10 per worker × 4 = 40 total
+
+---
+
+### Тест 1: Light Load (10 VUs, 30s)
+
+| Метрика          | Go API    | Python API | Разница         |
+| ---------------- | --------- | ---------- | --------------- |
+| Latency p50      | 1.2ms     | 2.5ms      | Go 2.1x быстрее |
+| Latency p95      | 4.02ms    | 8.58ms     | Go 2.1x быстрее |
+| Latency p99      | 4.83ms    | 10.4ms     | Go 2.2x быстрее |
+| Throughput (RPS) | 106 req/s | 104 req/s  | ~равны (+2%)    |
+| Error rate       | 0%        | 0%         | паритет         |
+| Total requests   | 2,911     | 2,842      | -               |
+
+Вывод: Go даёт ~2x меньшую latency при почти одинаковом RPS.
+
+---
+
+### Тест 2: Heavy Load (100 VUs, 2 min)
+
+| Метрика          | Go API      | Python API  | Разница           |
+| ---------------- | ----------- | ----------- | ----------------- |
+| Latency p50      | 1.0ms       | 2.47ms      | Go 2.5x быстрее   |
+| Latency p95      | 5.11ms      | 7.08ms      | Go 1.4x быстрее   |
+| Latency p99      | 10.4ms      | 22.81ms     | Go 2.2x быстрее   |
+| Latency max      | 88ms        | 1,980ms     | Go 22x стабильнее |
+| Throughput (RPS) | 1,070 req/s | 1,054 req/s | ~равны (+1.5%)    |
+| Error rate       | 0%          | 0%          | паритет           |
+| Total requests   | 116,833     | 115,108     | -                 |
+
+Вывод: throughput почти равный, но у Python сильные выбросы latency (max и p99).
+
+---
+
+### Общие выводы
+
+* Latency: Go быстрее (примерно 1.4–2.5x по процентилям)
+* Throughput (RPS): паритет (~1–2% разница)
+* Стабильность: Go лучше (max latency 88ms vs 1980ms)
+* Надежность: паритет (0% ошибок)
+
+Файлы результатов:
+
+* `loadtest/results/go-*.json`
+* `loadtest/results/py-*.json`
+* `loadtest/results/go-*.log`
+* `loadtest/results/py-*.log`
+* `loadtest/results/summary-multi.txt`
 
 ---
 
 ## Настройка параметров
 
-Все параметры находятся в `.env` (или `.env.single` / `.env.multi`).
+Все параметры в `.env` (или `.env.single` / `.env.multi`).
 
-### База данных / пулы
+### DB пулы
 
 * Go:
 
-  * `DB_MAX_CONNS` — max соединений для Go API
-  * `DB_MIN_CONNS` — min соединений для Go API
+  * `DB_MAX_CONNS`
+  * `DB_MIN_CONNS`
 * Python:
 
-  * `DB_POOL_MAX_SIZE` — max размер пула на **один** worker
-  * `DB_POOL_MIN_SIZE` — min размер пула на **один** worker
+  * `DB_POOL_MAX_SIZE` (на один worker)
+  * `DB_POOL_MIN_SIZE` (на один worker)
 * Python workers:
 
-  * `UVICORN_WORKERS` — число процессов uvicorn
-
-### Параметры k6
-
-Редактируются в `loadtest/k6/*.js`:
-
-* профили нагрузки (VUs, duration, ramp)
+  * `UVICORN_WORKERS`
 
 ---
 
-## Интерпретация результатов
+## Troubleshooting
 
-После `make bench-go` / `make bench-py` смотрите:
-
-1. **http_req_duration** — latency:
-
-   * p(50), p(95), p(99)
-2. **http_req_failed** — % ошибок (идеально 0%)
-3. **iterations** — сколько итераций выполнено
-
-Пример:
-
-```text
-http_req_duration: avg=5ms med=4ms p(95)=12ms p(99)=20ms max=50ms
-http_req_failed:   0.00%
-iterations:        50000
-```
-
----
-
-## Troubleshooting (частые проблемы и решения)
-
-### 1) Go: ошибка контрольных сумм / go.sum (checksum mismatch)
-
-Иногда модкеш содержит неконсистентные версии или `go.sum`/`go.mod` не синхронизированы.
-
-Решение:
+### Go: checksum mismatch / go.sum
 
 ```bash
 cd go-api
@@ -302,14 +308,9 @@ go mod tidy
 go mod verify
 ```
 
-⚠️ Удалять `go.sum` можно как аварийный вариант, но предпочтительнее команды выше.
+### Docker недоступен в WSL2
 
-### 2) Docker не доступен в WSL2
-
-Симптом: `Cannot connect to the Docker daemon...` из WSL.
-
-Решение:
-Docker Desktop → Settings → Resources → WSL Integration → включить ваш дистрибутив.
+Docker Desktop → Settings → Resources → WSL Integration → включить дистрибутив.
 Проверка:
 
 ```bash
@@ -317,24 +318,22 @@ docker version
 docker compose version
 ```
 
-### 3) k6 не установлен / apt/brew не работает
+### k6 не установлен / apt/brew не работает
 
-Ничего ставить не нужно — используйте:
+k6 ставить не нужно:
 
 ```bash
 make bench-go
 make bench-py
 ```
 
-### 4) “Нечестные” результаты (разные CPU / разные DB connections)
+### Нечестные результаты (CPU/DB connections)
 
 Проверьте:
 
-* одинаковые CPU лимиты для go-api и py-api,
-* одинаковый TOTAL_DB_CONNS,
-* Python pool делится на число воркеров:
-
-  * `DB_POOL_MAX_SIZE = TOTAL_DB_CONNS / UVICORN_WORKERS`
+* одинаковые CPU лимиты для go-api и py-api
+* одинаковый TOTAL_DB_CONNS
+* Python pool делится на воркеры: `DB_POOL_MAX_SIZE = TOTAL_DB_CONNS / UVICORN_WORKERS`
 
 ---
 

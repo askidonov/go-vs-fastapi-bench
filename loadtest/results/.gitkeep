@@ -1,0 +1,17 @@
+# k6 Load Test Results
+
+This directory contains the output of k6 load tests.
+
+## File naming convention
+
+- `go-<scenario>-<timestamp>.json` - Go API test results
+- `py-<scenario>-<timestamp>.json` - Python API test results
+
+Where `<scenario>` is one of: `smoke`, `steady`, `ramp`, `read_user`, `list_users`, `mixed`
+
+## Example
+
+```
+go-smoke-20260131-120000.json
+py-steady-20260131-120500.json
+```

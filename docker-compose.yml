@@ -1,0 +1,133 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: bench-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - bench-network
+
+  db-migrate:
+    image: postgres:16-alpine
+    container_name: bench-migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: ${DB_HOST}
+      PGPORT: ${DB_PORT}
+      PGDATABASE: ${POSTGRES_DB}
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./db/migrations:/migrations
+    command: >
+      sh -c "
+        psql -f /migrations/001_init.sql
+      "
+    networks:
+      - bench-network
+
+  db-seed:
+    image: postgres:16-alpine
+    container_name: bench-seed
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+    environment:
+      PGHOST: ${DB_HOST}
+      PGPORT: ${DB_PORT}
+      PGDATABASE: ${POSTGRES_DB}
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./db/seed:/seed
+    command: >
+      sh -c "
+        psql -f /seed/001_seed_users.sql
+      "
+    networks:
+      - bench-network
+
+  go-api:
+    build:
+      context: ./go-api
+      dockerfile: Dockerfile
+    container_name: bench-go-api
+    depends_on:
+      db-seed:
+        condition: service_completed_successfully
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 512M
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_MAX_CONNS: ${DB_MAX_CONNS}
+      DB_MIN_CONNS: ${DB_MIN_CONNS}
+      GOMAXPROCS: ${GOMAXPROCS}
+      SERVER_PORT: ${GO_PORT}
+    ports:
+      - "${GO_PORT}:${GO_PORT}"
+    profiles:
+      - all
+      - go
+    networks:
+      - bench-network
+
+  py-api:
+    build:
+      context: ./py-api
+      dockerfile: Dockerfile
+    container_name: bench-py-api
+    depends_on:
+      db-seed:
+        condition: service_completed_successfully
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 512M
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_POOL_MIN_SIZE: ${DB_POOL_MIN_SIZE}
+      DB_POOL_MAX_SIZE: ${DB_POOL_MAX_SIZE}
+      UVICORN_WORKERS: ${UVICORN_WORKERS}
+      PYTHONUNBUFFERED: ${PYTHONUNBUFFERED}
+      SERVER_PORT: ${PY_PORT}
+    ports:
+      - "${PY_PORT}:${PY_PORT}"
+    profiles:
+      - all
+      - py
+    networks:
+      - bench-network
+
+volumes:
+  postgres_data:
+
+networks:
+  bench-network:
+    driver: bridge

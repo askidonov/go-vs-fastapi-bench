@@ -1,0 +1,147 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+     execution: local
+        script: /loadtest/k6/read_user.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 10 max VUs, 1m0s max duration (incl. graceful stop):
+              * smoke: 10 looping VUs for 30s (gracefulStop: 30s)
+
+
+running (0m01.0s), 10/10 VUs, 78 complete and 0 interrupted iterations
+smoke   [   3% ] 10 VUs  00.9s/30s
+
+running (0m02.0s), 10/10 VUs, 172 complete and 0 interrupted iterations
+smoke   [   6% ] 10 VUs  01.9s/30s
+
+running (0m03.0s), 10/10 VUs, 271 complete and 0 interrupted iterations
+smoke   [  10% ] 10 VUs  02.9s/30s
+
+running (0m04.0s), 10/10 VUs, 362 complete and 0 interrupted iterations
+smoke   [  13% ] 10 VUs  03.9s/30s
+
+running (0m05.0s), 10/10 VUs, 462 complete and 0 interrupted iterations
+smoke   [  16% ] 10 VUs  04.9s/30s
+
+running (0m06.0s), 10/10 VUs, 552 complete and 0 interrupted iterations
+smoke   [  20% ] 10 VUs  05.9s/30s
+
+running (0m07.0s), 10/10 VUs, 652 complete and 0 interrupted iterations
+smoke   [  23% ] 10 VUs  06.9s/30s
+
+running (0m08.0s), 10/10 VUs, 742 complete and 0 interrupted iterations
+smoke   [  27% ] 10 VUs  08.0s/30s
+
+running (0m09.0s), 10/10 VUs, 842 complete and 0 interrupted iterations
+smoke   [  30% ] 10 VUs  08.9s/30s
+
+running (0m10.0s), 10/10 VUs, 932 complete and 0 interrupted iterations
+smoke   [  33% ] 10 VUs  09.9s/30s
+
+running (0m11.0s), 10/10 VUs, 1028 complete and 0 interrupted iterations
+smoke   [  36% ] 10 VUs  10.9s/30s
+
+running (0m12.0s), 10/10 VUs, 1122 complete and 0 interrupted iterations
+smoke   [  40% ] 10 VUs  12.0s/30s
+
+running (0m13.0s), 10/10 VUs, 1222 complete and 0 interrupted iterations
+smoke   [  43% ] 10 VUs  12.9s/30s
+
+running (0m14.0s), 10/10 VUs, 1312 complete and 0 interrupted iterations
+smoke   [  47% ] 10 VUs  14.0s/30s
+
+running (0m15.0s), 10/10 VUs, 1412 complete and 0 interrupted iterations
+smoke   [  50% ] 10 VUs  14.9s/30s
+
+running (0m16.0s), 10/10 VUs, 1502 complete and 0 interrupted iterations
+smoke   [  53% ] 10 VUs  15.9s/30s
+
+running (0m17.0s), 10/10 VUs, 1602 complete and 0 interrupted iterations
+smoke   [  56% ] 10 VUs  16.9s/30s
+
+running (0m18.0s), 10/10 VUs, 1692 complete and 0 interrupted iterations
+smoke   [  60% ] 10 VUs  17.9s/30s
+
+running (0m19.0s), 10/10 VUs, 1782 complete and 0 interrupted iterations
+smoke   [  63% ] 10 VUs  19.0s/30s
+
+running (0m20.0s), 10/10 VUs, 1882 complete and 0 interrupted iterations
+smoke   [  67% ] 10 VUs  20.0s/30s
+
+running (0m21.0s), 10/10 VUs, 1972 complete and 0 interrupted iterations
+smoke   [  70% ] 10 VUs  20.9s/30s
+
+running (0m19.3s), 10/10 VUs, 2072 complete and 0 interrupted iterations
+smoke   [  73% ] 10 VUs  21.9s/30s
+
+running (0m20.3s), 10/10 VUs, 2172 complete and 0 interrupted iterations
+smoke   [  76% ] 10 VUs  22.9s/30s
+
+running (0m21.3s), 10/10 VUs, 2262 complete and 0 interrupted iterations
+smoke   [  80% ] 10 VUs  24.0s/30s
+
+running (0m22.3s), 10/10 VUs, 2352 complete and 0 interrupted iterations
+smoke   [  83% ] 10 VUs  25.0s/30s
+
+running (0m23.3s), 10/10 VUs, 2452 complete and 0 interrupted iterations
+smoke   [  86% ] 10 VUs  25.9s/30s
+
+running (0m24.3s), 10/10 VUs, 2542 complete and 0 interrupted iterations
+smoke   [  90% ] 10 VUs  27.0s/30s
+
+running (0m25.3s), 10/10 VUs, 2642 complete and 0 interrupted iterations
+smoke   [  93% ] 10 VUs  27.9s/30s
+
+running (0m26.3s), 10/10 VUs, 2742 complete and 0 interrupted iterations
+smoke   [  96% ] 10 VUs  28.9s/30s
+
+running (0m27.3s), 10/10 VUs, 2832 complete and 0 interrupted iterations
+smoke   [ 100% ] 10 VUs  29.9s/30s
+
+
+  █ THRESHOLDS 
+
+    http_req_duration
+    ✓ 'p(95)<100' p(95)=9.11ms
+    ✓ 'p(99)<200' p(99)=10.93ms
+
+    http_req_failed
+    ✓ 'rate<0.01' rate=0.00%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 8556    312.184119/s
+    checks_succeeded...: 100.00% 8556 out of 8556
+    checks_failed......: 0.00%   0 out of 8556
+
+    ✓ status is 200
+    ✓ has user id
+    ✓ has email
+
+    HTTP
+    http_req_duration..............: avg=4.19ms   min=871.64µs med=2.54ms   max=123.28ms p(90)=7.73ms   p(95)=9.11ms  
+      { expected_response:true }...: avg=4.19ms   min=871.64µs med=2.54ms   max=123.28ms p(90)=7.73ms   p(95)=9.11ms  
+    http_req_failed................: 0.00%  0 out of 2853
+    http_reqs......................: 2853   104.09786/s
+
+    EXECUTION
+    iteration_duration.............: avg=105.45ms min=101.14ms med=104.15ms max=224.72ms p(90)=109.53ms p(95)=110.53ms
+    iterations.....................: 2852   104.061373/s
+    vus............................: 10     min=10        max=10
+    vus_max........................: 10     min=10        max=10
+
+    NETWORK
+    data_received..................: 928 kB 34 kB/s
+    data_sent......................: 320 kB 12 kB/s
+
+
+
+
+running (0m27.4s), 00/10 VUs, 2852 complete and 0 interrupted iterations
+smoke ✓ [ 100% ] 10 VUs  30s

@@ -1,0 +1,7 @@
+=== Running k6 tests for Go API ===
+Running k6 test: read_user
+Target: http://localhost:8080
+Output: loadtest/results/go-read_user-20260131-111612.json
+---
+./scripts/run_k6.sh: line 25: k6: command not found
+make: *** [Makefile:83: bench-go] Error 127

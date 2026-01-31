@@ -1,0 +1,17 @@
+version: '3.9'
+
+# Override для single-instance тестирования (1 CPU)
+services:
+  go-api:
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 256M
+
+  py-api:
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 256M
